@@ -31,7 +31,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: C:\Users\raypo\Downloads\Compressed\UEWASM-main\UEWASM-main\runtime\web\uew_files.js
+// include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_files.js
 // Game files fetched on demand in 1 MB blocks (host_remote.c). data/index.txt lists every file;
 // data/<id> is its first part and data/<id>.<n> the rest.
 ((() => {
@@ -492,8 +492,8 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
   });
 }))();
 
-// end include: C:\Users\raypo\Downloads\Compressed\UEWASM-main\UEWASM-main\runtime\web\uew_files.js
-// include: C:\Users\raypo\Downloads\Compressed\UEWASM-main\UEWASM-main\runtime\web\uew_save.js
+// end include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_files.js
+// include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_save.js
 // The save folder lives in IndexedDB so progress and settings survive reloads.
 ((() => {
   if (typeof ENVIRONMENT_IS_PTHREAD != "undefined" && ENVIRONMENT_IS_PTHREAD) return;
@@ -549,8 +549,8 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
   });
 }))();
 
-// end include: C:\Users\raypo\Downloads\Compressed\UEWASM-main\UEWASM-main\runtime\web\uew_save.js
-// include: C:\Users\raypo\Downloads\Compressed\UEWASM-main\UEWASM-main\runtime\web\uew_debug.js
+// end include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_save.js
+// include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_debug.js
 // Debug panel: \ or Insert shows it. Live numbers, switches that apply on reload, and tools that save a log, dump the
 // green threads or capture a frame to a file.
 ((() => {
@@ -743,7 +743,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
   }, true);
 }))();
 
-// end include: C:\Users\raypo\Downloads\Compressed\UEWASM-main\UEWASM-main\runtime\web\uew_debug.js
+// end include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_debug.js
 var programArgs = [];
 
 var thisProgram = "./this.program";
