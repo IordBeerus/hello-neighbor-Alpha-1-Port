@@ -31,7 +31,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_files.js
+// include: runtime/web/uew_files.js
 // Game files fetched on demand in 1 MB blocks (host_remote.c). data/index.txt lists every file;
 // data/<id> is its first part and data/<id>.<n> the rest.
 ((() => {
@@ -492,8 +492,8 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
   });
 }))();
 
-// end include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_files.js
-// include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_save.js
+// end include: runtime/web/uew_files.js
+// include: runtime/web/uew_save.js
 // The save folder lives in IndexedDB so progress and settings survive reloads.
 ((() => {
   if (typeof ENVIRONMENT_IS_PTHREAD != "undefined" && ENVIRONMENT_IS_PTHREAD) return;
@@ -549,8 +549,8 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
   });
 }))();
 
-// end include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_save.js
-// include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_debug.js
+// end include: runtime/web/uew_save.js
+// include: runtime/web/uew_debug.js
 // Debug panel: \ or Insert shows it. Live numbers, switches that apply on reload, and tools that save a log, dump the
 // green threads or capture a frame to a file.
 ((() => {
@@ -572,6 +572,16 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
       orig(...a);
     };
   }
+  // first JS RangeError (wasm stack overflow surfaces as "Maximum call stack size exceeded"): log its stack once
+  let rangeLogged = false;
+  const logRange = e => {
+    const err = e && (e.error || e.reason);
+    if (rangeLogged || !err || err.name !== "RangeError") return;
+    rangeLogged = true;
+    console.error("[stack] first RangeError: " + err.message + "\n" + (err.stack || "(no stack)"));
+  };
+  addEventListener("error", logRange, true);
+  addEventListener("unhandledrejection", logRange, true);
   const save = (name, text, type) => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([ text ], {
@@ -743,7 +753,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
   }, true);
 }))();
 
-// end include: C:\Users\raypo\Downloads\Output Folder Slop\game-rust\runtime\web\uew_debug.js
+// end include: runtime/web/uew_debug.js
 var programArgs = [];
 
 var thisProgram = "./this.program";
@@ -4615,6 +4625,40 @@ function _clock_time_get(clk_id, ignored_precision, ptime) {
   return 0;
 }
 
+/** @type {!Float64Array} */ var HEAPF64;
+
+var readEmAsmArgsArray = [];
+
+var readEmAsmArgs = (sigPtr, buf) => {
+  readEmAsmArgsArray.length = 0;
+  var ch;
+  // Most arguments are i32s, so shift the buffer pointer so it is a plain
+  // index into HEAP32.
+  while (ch = HEAPU8[sigPtr++ >>> 0]) {
+    // Floats are always passed as doubles, so all types except for 'i'
+    // are 8 bytes and require alignment.
+    var wide = (ch != 105);
+    wide &= (ch != 112);
+    buf += wide && (buf % 8) ? 4 : 0;
+    readEmAsmArgsArray.push(// Special case for pointers under wasm64 or CAN_ADDRESS_2GB mode.
+    ch == 112 ? HEAPU32[((buf) >>> 2) >>> 0] : ch == 106 ? HEAP64[((buf) >>> 3) >>> 0] : ch == 105 ? HEAP32[((buf) >>> 2) >>> 0] : HEAPF64[((buf) >>> 3) >>> 0]);
+    buf += wide ? 8 : 4;
+  }
+  return readEmAsmArgsArray;
+};
+
+var runEmAsmFunction = (code, sigPtr, argbuf) => {
+  var args = readEmAsmArgs(sigPtr, argbuf);
+  return ASM_CONSTS[code](...args);
+};
+
+function _emscripten_asm_const_int(code, sigPtr, argbuf) {
+  code >>>= 0;
+  sigPtr >>>= 0;
+  argbuf >>>= 0;
+  return runEmAsmFunction(code, sigPtr, argbuf);
+}
+
 var maybeCStringToJsString = cString => cString > 2 ? UTF8ToString(cString) : cString;
 
 /** @type {Object} */ var specialHTMLTargets = [ 0, globalThis.document ?? 0, globalThis.window ?? 0 ];
@@ -6142,8 +6186,6 @@ var _uew_js_frame_request = function(seq) {
   };
   (typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : setTimeout)(go);
 };
-
-/** @type {!Float64Array} */ var HEAPF64;
 
 function _uew_rf_find(path, size, mtime) {
   const f = Module.uewFiles && Module.uewFiles.lookup(UTF8ToString(path >>> 0));
@@ -8994,6 +9036,18 @@ Module["FS_createLazyFile"] = FS_createLazyFile;
 // Begin JS library exports
 // End JS library exports
 // end include: postlibrary.js
+var ASM_CONSTS = {
+  3347637: () => {
+    const F = Module.uewFiles;
+    if (!F) {
+      console.log("[lockdiag] files: no uewFiles");
+      return;
+    }
+    console.log("[lockdiag] files: pending " + F.pending.size + ", cacheBytes " + F.cacheBytes + ", fetched " + F.fetched + ", requests " + F.requests + ", failed " + F.failed.size);
+    if (F.report) for (const line of F.report()) console.log("[lockdiag] files: " + line);
+  }
+};
+
 function __asyncjs__uew_js_switch(from, to, target) {
   return Asyncify.handleAsync(async () => {
     Module.uewRes = Module.uewRes || {};
@@ -9124,6 +9178,7 @@ var wasmImports = {
   /** @export */ _timegm_js: __timegm_js,
   /** @export */ _tzset_js: __tzset_js,
   /** @export */ clock_time_get: _clock_time_get,
+  /** @export */ emscripten_asm_const_int: _emscripten_asm_const_int,
   /** @export */ emscripten_get_canvas_element_size: _emscripten_get_canvas_element_size,
   /** @export */ emscripten_get_now: _emscripten_get_now,
   /** @export */ emscripten_resize_heap: _emscripten_resize_heap,
